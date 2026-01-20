@@ -27,6 +27,10 @@
       "template": "_assets_/Template/template-概率论.md"
     },
     {
+      "folder": "_assets_/todo",
+      "template": "_assets_/Template/template-todo.md"
+    },
+    {
       "folder": "/",
       "template": "_assets_/Template/template-default.md"
     }
