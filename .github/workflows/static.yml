@@ -80,11 +80,32 @@ jobs:
           rm -rf temp_repo
           # git clone --depth 1 https://github.com/${GITHUB_REPOSITORY}.git # 如果有多个clone项则替换成这个，避免冲突
 
+      - name: 环境 - 增加交换空间
+        run: |
+          sudo fallocate -l 4G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
+
+      - name: 环境 - 自动计算 Node 内存
+        run: |
+          TOTAL_MB=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
+          AVAILABLE_MB=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo)
+          HEAP_MB=$((AVAILABLE_MB * 70 / 100))
+
+          if [ "$HEAP_MB" -lt 4096 ]; then HEAP_MB=4096; fi
+          if [ "$HEAP_MB" -gt 8192 ]; then HEAP_MB=8192; fi
+
+          echo "NODE_OPTIONS=--max_old_space_size=${HEAP_MB}" >> "$GITHUB_ENV"
+          echo "TOTAL_MB=${TOTAL_MB}" >> "$GITHUB_ENV"
+          echo "AVAILABLE_MB=${AVAILABLE_MB}" >> "$GITHUB_ENV"
+          echo "自动选择 NODE_OPTIONS=--max_old_space_size=${HEAP_MB} (total=${TOTAL_MB}MB, available=${AVAILABLE_MB}MB)"
+
       - name: 文档 - 构建
-        timeout-minutes: 30
-        env:
-          NODE_OPTIONS: --max_old_space_size=4096
+        timeout-minutes: 45
         run: |-
+          echo "Using ${NODE_OPTIONS} (total=${TOTAL_MB}MB, available=${AVAILABLE_MB}MB)"
           node -e 'console.log(v8.getHeapStatistics())'
           pnpm exec vuepress-vite build src
           > src/.vuepress/dist/.nojekyll
