@@ -81,11 +81,12 @@ jobs:
           # git clone --depth 1 https://github.com/${GITHUB_REPOSITORY}.git # 如果有多个clone项则替换成这个，避免冲突
 
       - name: 文档 - 构建
+        timeout-minutes: 30
         env:
-          NODE_OPTIONS: --max_old_space_size=20480
+          NODE_OPTIONS: --max_old_space_size=4096
         run: |-
           node -e 'console.log(v8.getHeapStatistics())'
-          pnpm run docs:build
+          pnpm exec vuepress-vite build src
           > src/.vuepress/dist/.nojekyll
 
       - name: 文档 - 部署
